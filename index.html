@@ -4,6 +4,10 @@
 	<meta charset="UTF-8" />
 	<title>Phaser - Making your first game, part 1</title>
 	<script type="text/javascript" src="js/phaser.min.js"></script>
+	<script type="text/javascript" src="js/menu.js"></script>
+	<script type="text/javascript" src="js/game.js"></script>
+	<script type="text/javascript" src="js/win-screen.js"></script>
+	<script type="text/javascript" src="js/lose-screen.js"></script>
     <style type="text/css">
         body {
             margin: 0;
@@ -14,143 +18,20 @@
 
 <script type="text/javascript">
 
-//Sperm class
-var Sperm = function (game, x, y, rotation) {
+var gametes = gametes || {};
 
-    Phaser.Sprite.call(this, game, x, y, 'sperm');
-    game.physics.arcade.enable(this);
+gametes.game = new Phaser.Game(800, 600, Phaser.AUTO, '');
 
-    //initialize sprite properties and animations.
-    this.anchor.x = 0.5;
-	this.anchor.y = 0.28;
-	this.animations.add('flagellate', [0, 1, 2, 3], 10, true);
-	this.animations.play('flagellate');
-	this.rotation = rotation;
-
-	//initialize sperm variables
-	this.rotationSpeed = 0;
-
-	//Sperm methods
-	this.turn = function(direction) {
-		//accelerate rotation.
-		this.rotationSpeed += direction * Sperm.rotationAcceleration;
-		//constrain rotation speed.
-		this.rotationSpeed = Math.min(Sperm.maxRotationSpeed, Math.max(-Sperm.maxRotationSpeed, this.rotationSpeed));
-
-		this.rotation += this.rotationSpeed;
-	}
-};
-Sperm.prototype = Object.create(Phaser.Sprite.prototype);
-Sperm.prototype.constructor = Sperm;
-Sperm.prototype.update = function() {
-	//every update move the sperm in the direction it's facing.
-	game.physics.arcade.velocityFromRotation(this.rotation - Math.PI/2, Sperm.speed, this.body.velocity);
-}
-//sperm constants
-Sperm.speed = 30;
-Sperm.rotationAcceleration = 0.005;
-Sperm.maxRotationSpeed = 0.02;
-Sperm.left = -1;
-Sperm.right = 1;
-
-//Egg class
-var Egg = function (game, x, y) {
-
-	Phaser.Sprite.call(this, game, x, y, 'egg');
-	game.physics.arcade.enable(this);
-
-	//initialize sprite properties and animations.
-	this.anchor.set(0.5);
-	this.animations.add(Egg.up, [0], 1, false);
-	this.animations.add(Egg.right, [1], 1, false);
-	this.animations.add(Egg.down, [2], 1, false);
-	this.animations.add(Egg.left, [3], 1, false);
-
-	//initialize egg variables
-	this.sheildedDirection = Egg.up;
-
-	//Egg methods
-	this.shieldDirection = function(direction) {
-		this.sheildedDirection = direction;
-		this.animations.play(direction);
-	}
-
-};
-Egg.prototype = Object.create(Phaser.Sprite.prototype);
-Egg.prototype.constructor = Egg;
-//egg constants
-Egg.up = 'up';
-Egg.right = 'right';
-Egg.left = 'left';
-Egg.down = 'down';
-
-//Initialize game!
-var game = new Phaser.Game(800, 600, Phaser.AUTO, '', { preload: preload, create: create, update: update }),
-	spermControls,
+var spermControls,
 	eggControls,
 	playerSperm,
 	playerEgg;
 
-function preload() {
-	game.load.spritesheet('sperm', 'assets/sperm.png', 19, 55);
-	game.load.spritesheet('egg', 'assets/egg.png', 77, 90);
-}
-
-function create() {
-	game.stage.backgroundColor = "#EEEEEE";
-	game.physics.startSystem(Phaser.Physics.ARCADE);
-	
-	//initialize sperm player
-	playerSperm = new Sperm(game, game.world.centerX/2, game.world.centerY/2, randomRotation());
-	game.add.existing(playerSperm);
-
-	//initialize egg player
-	playerEgg = new Egg(game, game.world.centerX, game.world.centerY);
-	game.add.existing(playerEgg);
-
-	//initialize user input
-	spermControls = game.input.keyboard.createCursorKeys();
-	eggControls = game.input.keyboard.addKeys({
-		up: Phaser.KeyCode.W,
-		right: Phaser.KeyCode.D,
-		down: Phaser.KeyCode.S,
-		left: Phaser.KeyCode.A
-	});
-}
-
-function update() {
-	//handle sperm input
-	if(spermControls.left.isDown) {
-		playerSperm.turn(Sperm.left);
-	} else if(spermControls.right.isDown) {
-		playerSperm.turn(Sperm.right);
-	}
-
-	//handle egg input
-	if(eggControls.left.isDown) {
-		playerEgg.shieldDirection(Egg.left);
-	} else if(eggControls.up.isDown) {
-		playerEgg.shieldDirection(Egg.up);
-	} else if(eggControls.right.isDown) {
-		playerEgg.shieldDirection(Egg.right);
-	} else if(eggControls.down.isDown) {	
-		playerEgg.shieldDirection(Egg.down);
-	}
-
-	game.physics.arcade.overlap(playerSperm, playerEgg, collideSpermAndEgg);
-}
-
-//collision functions
-function collideSpermAndEgg(playerSperm, playerEgg) {
-	
-}
-
-
-//helper functions
-function randomRotation() {
-	//returns a number between 0 and 2pi
-	return Math.random() * 2 * Math.PI;
-}
+gametes.game.state.add('Menu', gametes.Menu);
+gametes.game.state.add('Game', gametes.Game);
+gametes.game.state.add('WinScreen', gametes.WinScreen);
+gametes.game.state.add('LoseScreen', gametes.LoseScreen);
+gametes.game.state.start('Menu');
 
 </script>
 
