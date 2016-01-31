@@ -2,7 +2,7 @@
 <html lang="en"> 
 <head> 
 	<meta charset="UTF-8" />
-	<title>Phaser - Making your first game, part 1</title>
+	<title>Bundle of Love</title>
 	<script type="text/javascript" src="js/phaser.min.js"></script>
 	<script type="text/javascript" src="js/menu.js"></script>
 	<script type="text/javascript" src="js/game.js"></script>
@@ -20,7 +20,7 @@
 
 var gametes = gametes || {};
 
-gametes.game = new Phaser.Game(800, 600, Phaser.AUTO, '');
+gametes.game = new Phaser.Game(window.innerWidth, window.innerHeight, Phaser.AUTO, '');
 
 var spermControls,
 	eggControls,

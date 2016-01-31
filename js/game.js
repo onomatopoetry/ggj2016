@@ -1,4 +1,5 @@
-
+var NUM_EVIL_SPERM = 300,
+	EGG_PADDING = 45;
 
 //Sperm class
 var Sperm = function (game, x, y, rotation) {
@@ -9,7 +10,7 @@ var Sperm = function (game, x, y, rotation) {
     this.anchor.x = 0.5;
 	this.anchor.y = 0.21;
 	this.rotation = rotation;
-	this.animations.add('flagellate', [0, 1, 2, 3], 10, true);
+	this.animations.add('flagellate', null, 10, true);
 	this.animations.play('flagellate');
 
 	//initialize physics properties
@@ -19,14 +20,10 @@ var Sperm = function (game, x, y, rotation) {
 
 	//sperm properties
 	this.turnDirection = 0;
-
-	//Sperm methods
-	this.turn = function(direction) {
-		this.turnDirection = direction;
-	}
 };
 Sperm.prototype = Object.create(Phaser.Sprite.prototype);
 Sperm.prototype.constructor = Sperm;
+//Sperm methods
 Sperm.prototype.update = function() {
 	var velocity = this.body.angularVelocity;
 
@@ -40,6 +37,9 @@ Sperm.prototype.update = function() {
 
 	//every update move the sperm in the direction it's facing.
 	this.game.physics.arcade.velocityFromRotation(this.rotation - Math.PI/2, Sperm.speed, this.body.velocity);
+}
+Sperm.prototype.turn = function(direction) {
+	this.turnDirection = direction;
 }
 //sperm constants
 Sperm.speed = 40;
@@ -65,16 +65,14 @@ var Egg = function (game, x, y) {
 
 	//initialize egg variables
 	this.unshieldedDirection = Egg.up;
-
-	//Egg methods
-	this.shieldDirection = function(direction) {
-		this.unshieldedDirection = direction;
-		this.animations.play(direction);
-	}
-
 };
 Egg.prototype = Object.create(Phaser.Sprite.prototype);
 Egg.prototype.constructor = Egg;
+//Egg methods
+Egg.prototype.shieldDirection = function(direction) {
+	this.unshieldedDirection = direction;
+	this.animations.play(direction);
+}
 //egg constants
 Egg.up = 'up';
 Egg.right = 'right';
@@ -82,6 +80,71 @@ Egg.left = 'left';
 Egg.down = 'down';
 //the percentage of each side of the egg that is touchable when unshielded.
 Egg.touchPercentage = 0.75;
+
+//SpermManager class - handles AI for swarm of evil sperm
+var SpermManager = function(spermList) {
+	this.sperm = spermList;
+
+	//an array parallel to this.sperm with timestamps of the last time the sperm made a decision.
+	this.lastDecisions = [];
+
+	//initialize sperm decisions
+	var now = new Date().valueOf();
+	for (var i = 0; i < this.sperm.length; i++) {
+		this._newSpermAction(this.sperm[i]);
+		this.lastDecisions[i] = now - (Math.random() * 1000 - 500);
+	}
+}
+//SpermManager constants
+SpermManager.timeBetweenDecisions = 1000;
+SpermManager.prototype.checkDecisions = function() {
+	var now = new Date().valueOf();
+
+	//Figure out which sperm need to make a new decision.
+	for (var i = 0; i < this.sperm.length; i++) {
+		var sperm = this.sperm[i],
+			lastDecision = this.lastDecisions[i];
+
+		if(lastDecision + SpermManager.timeBetweenDecisions < now) {
+			var action = SpermActions.getRandomAction();
+			this._newSpermAction(sperm);
+
+			this.lastDecisions[i] = now;
+		}
+	};
+}
+SpermManager.prototype.forceNewDecision = function(sperm) {
+	//force a single sperm to make a new decision
+	for (var i = 0; i < this.sperm.length; i++) {
+		if(sperm == this.sperm[i]) {
+			this._newSpermAction(sperm);
+			this.lastDecisions[i] = new Date().valueOf();
+			break;
+		}
+	};
+}
+SpermManager.prototype._newSpermAction = function(sperm) {
+	var action = SpermActions.getRandomAction();
+
+	if(action == SpermActions.TURN_RIGHT) {
+		sperm.turn(Sperm.right);
+	} else if(action == SpermActions.TURN_LEFT) {
+		sperm.turn(Sperm.left);
+	} else {
+		sperm.turn(0);
+	}
+}
+
+//Helper for choosing actions in SpermManager.
+SpermActions = {
+	GO_STRAIGHT: 1,
+	TURN_RIGHT: 2,
+	TURN_LEFT: 3,
+
+	getRandomAction: function() {
+		return Math.floor(Math.random() * 3 + 1);
+	}
+}
 
 var gametes = gametes || {};
 
@@ -91,14 +154,19 @@ gametes.Game.prototype = {
 	create: function() {
 		this.game.stage.backgroundColor = "#EEEEEE";
 		this.game.physics.startSystem(Phaser.Physics.ARCADE);
-		
-		//initialize sperm player
-		this.playerSperm = new Sperm(this.game, this.game.world.centerX/2, this.game.world.centerY, Math.PI / 2);
-		this.game.add.existing(this.playerSperm);
 
 		//initialize egg player
 		this.playerEgg = new Egg(this.game, this.game.world.centerX, this.game.world.centerY);
 		this.game.add.existing(this.playerEgg);
+		
+		//initialize sperm player
+		var position = this.randomSpermPosition();
+			spermX = position.x,
+			spermY = position.y,
+			spermRotation = Math.random() * (Math.PI * 2);
+
+		this.playerSperm = new Sperm(this.game, spermX, spermY, spermRotation);
+		this.game.add.existing(this.playerSperm);
 
 		//initialize user input
 		this.spermControls = this.game.input.keyboard.createCursorKeys();
@@ -108,6 +176,24 @@ gametes.Game.prototype = {
 			down: Phaser.KeyCode.S,
 			left: Phaser.KeyCode.A
 		});
+
+		//cheat!
+		this.cheatKey = this.game.input.keyboard.addKey(Phaser.KeyCode.C);
+
+		//build the evil sperm.
+		this.evilSperm = [];
+		for (var i = 0; i < NUM_EVIL_SPERM; i++) {
+			position = this.randomSpermPosition(),
+			spermX = position.x,
+			spermY = position.y,
+			spermRotation = Math.random() * (Math.PI * 2); 
+
+			var sperm = new Sperm(this.game, spermX, spermY, spermRotation);
+			this.game.add.existing(sperm);
+			this.evilSperm[i] = sperm;
+		};
+
+		this.spermManager = new SpermManager(this.evilSperm);
 	},
 	update: function() {
 		//handle sperm input
@@ -130,9 +216,23 @@ gametes.Game.prototype = {
 			this.playerEgg.shieldDirection(Egg.down);
 		}
 
-		this.game.physics.arcade.collide(this.playerSperm, this.playerEgg, this.collideSpermAndEgg, null, this);
+		//cheating!
+		if(this.cheatKey.isDown) {
+			this.playerSperm.tint = 0xFF0000;
+		} else {
+			this.playerSperm.tint = 0xFFFFFF;
+		}
 
-		this.game.world.wrap(this.playerSperm, 15, false)
+		this.game.physics.arcade.collide(this.playerSperm, this.playerEgg, this.collideSpermAndEgg, null, this);
+		this.game.world.wrap(this.playerSperm, 15, false);
+
+		this.spermManager.checkDecisions();
+		for (var i = 0; i < this.evilSperm.length; i++) {
+			var sperm = this.evilSperm[i];
+
+			this.game.physics.arcade.collide(sperm, this.playerEgg, this.collideSpermAndEgg, null, this);
+			this.game.world.wrap(this.playerSperm, 15, false);
+		};
 	},
 	//collision functions
 	collideSpermAndEgg: function(sperm, egg) {
@@ -158,11 +258,28 @@ gametes.Game.prototype = {
 			//turn sperm around here.
 			//TODO: this is super basic for now, if you have time make it better!
 			sperm.rotation += Math.PI;
+			if(sperm != playerSperm) {
+				this.spermManager.forceNewDecision(sperm);
+			}
 		}
 	},
 	//helper functions
-	randomRotation: function() {
-		//returns a number between 0 and 2pi
-		return Math.random() * 2 * Math.PI;
+	randomSpermPosition: function() {
+		//returns a point representing a random location anywhere but on top of the egg.
+		var spermX = Math.random() * this.game.world.width,
+			spermY = Math.random() * this.game.world.height,
+			centerX = this.game.world.centerX,
+			centerY = this.game.world.centerY;
+
+		//is this point too close to the egg?
+		if( spermX > centerX - this.playerEgg.width/2 - EGG_PADDING
+			&& spermX < centerX + this.playerEgg.width/2 + EGG_PADDING
+			&& spermY > centerY - this.playerEgg.height/2 - EGG_PADDING
+			&& spermY < centerY + this.playerEgg.height/2 + EGG_PADDING )
+			{
+			return this.randomSpermPosition();
+		}
+
+		return new Phaser.Point(spermX, spermY);
 	}
 };
