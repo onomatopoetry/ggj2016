@@ -231,7 +231,7 @@ gametes.Game.prototype = {
 			var sperm = this.evilSperm[i];
 
 			this.game.physics.arcade.collide(sperm, this.playerEgg, this.collideSpermAndEgg, null, this);
-			this.game.world.wrap(this.playerSperm, 15, false);
+			this.game.world.wrap(this.sperm, 15, false);
 		};
 	},
 	//collision functions
