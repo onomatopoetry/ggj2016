@@ -17,13 +17,13 @@ gametes.Menu.prototype = {
 
 		var style = { font: "bold 22px Arial", boundsAlignV: "middle" },
 			eggInstructions = "Player 1 uses the WASD keys to change which side of the egg is open to\n" +
-							"sperm. Three sides are shielded at all times. Let player one in, but not\n" +
-							"the riff raff.";
+							"sperm. The three blue-ish sides are shielded, and the egg is looking at its\n" +
+							"open side. Let player 2 in to win.";
 			eggInstructionText = this.game.add.text(240, 150, eggInstructions, style),
 
-			spermInstructions = "Player 2 uses the right and left arrow keys to steer their sperm to the egg.\n" +
-								"Both players will have to figure out which sperm is Player 2 - the rest are\n" +
-								"genetically inferior.",
+			spermInstructions = "Player 2 has to figure out which sperm they are, and then use the right and\n" +
+								"left arrow keys to guide that sperm into the open side of the egg.";
+
 			spermInstructionText = this.game.add.text(240, 320, spermInstructions, style);
 
 		var eggSprite = this.game.add.sprite(70, 150, 'egg'),

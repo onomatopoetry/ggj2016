@@ -20,6 +20,6 @@ gametes.LoseScreen.prototype = {
 	    this.game.input.onDown.add(this.restart, this);
 	},
 	restart: function() {
-		this.state.start('Game');
+		this.state.start('Menu');
 	}
 }
