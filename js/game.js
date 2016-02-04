@@ -1,5 +1,5 @@
-var NUM_EVIL_SPERM = 300,
-	EGG_PADDING = 45;
+var NUM_EVIL_SPERM = 200,
+	EGG_PADDING = 75;
 
 //Sperm class
 var Sperm = function (game, x, y, rotation) {
@@ -178,7 +178,7 @@ gametes.Game.prototype = {
 		});
 
 		//cheat!
-		this.cheatKey = this.game.input.keyboard.addKey(Phaser.KeyCode.C);
+		this.cheatKey = this.game.input.keyboard.addKey(Phaser.KeyCode.SHIFT);
 
 		//build the evil sperm.
 		this.evilSperm = [];
